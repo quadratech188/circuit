@@ -1,9 +1,8 @@
 from typing import List
 import numpy as np
 
-from src.Solver import gear2_step, trapezoidal_step
+from src.Solver import gear2_step
 from src.StateBuilder import StateBuilder
-from src.State import Equation
 from src.Element import Element
 
 class Simulation:
@@ -31,12 +30,7 @@ class Simulation:
         for i in range(len(x)):
             self.x_prev[i] = x[i]
 
-        equation_copy = self.equation.copy()
-
-        for element in elements:
-            element.stamp(0, equation_copy, self.x_prev)
-
-        self.x = trapezoidal_step(dt, self.x_prev, equation_copy)
+        self.x = self.x_prev.copy()
 
         self.dt = dt
         self.solver_iterations = solver_iterations
