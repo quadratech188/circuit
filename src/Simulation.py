@@ -48,7 +48,7 @@ class Simulation:
             x_next_iter = gear2_step(self.dt, self.x_prev, self.x, equation_copy)
 
             if np.linalg.norm(x_next_iter - x_next) < self.solver_threshold:
-                x_next = x_next_iter
+                x_next = x_next_iter.copy()
                 break
 
             x_next = x_next_iter
