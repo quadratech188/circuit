@@ -20,15 +20,16 @@ class Diode(Element):
         I = self.I_s * (np.exp(self.k * v_delta) - 1)
 
         dI_dV = self.k * self.I_s * np.exp(self.k * v_delta)
+        I_eff = I - dI_dV * v_delta
 
         # Resistor + CurrentSource
 
         if self.i != -1:
             equation.G[self.i, self.i] -= dI_dV
-            equation.b[self.i] -= I
+            equation.b[self.i] += I_eff
         if self.j != -1:
             equation.G[self.j, self.j] -= dI_dV
-            equation.b[self.j] += I
+            equation.b[self.j] -= I_eff
 
         if self.i != -1 and self.j != -1:
             equation.G[self.i, self.j] += dI_dV
