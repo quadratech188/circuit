@@ -21,7 +21,7 @@ elements: List[Element] = [
 ]
 
 simulation = Simulation(3, elements,
-                        dt=0.00001,
+                        dt=0.0001,
                         solver_iterations=20,
                         solver_threshold=1e-6)
 
