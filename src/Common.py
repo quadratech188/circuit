@@ -65,6 +65,8 @@ class Resistor(Element):
         V_i = state[self.i] if self.i != -1 else 0
         V_j = state[self.j] if self.j != -1 else 0
 
+        return (V_i - V_j) / self.R
+
 class Capacitor(Element):
     def __init__(self, i: int, j: int, C: float):
         self.i = i
