@@ -2,108 +2,10 @@ import math
 from typing import Callable, List
 import numpy as np
 
-class StateBuilder:
-    def __init__(self, n: int):
-        self.n = n
-        self.total = n
-
-    def add_variable(self):
-        self.total += 1
-        return self.total - 1
-
-    def size(self):
-        return self.total
-
-
-class Element:
-    def __init__(self, i: int, j: int):
-        self.i = i
-        self.j = j
-
-    def build(self, state: StateBuilder):
-        pass
-    
-    def stamp_matrices(self, G: np.ndarray, C: np.ndarray):
-        pass
-
-    def stamp_source(self, t: float, source: np.ndarray):
-        pass
-
-
-class VoltageSource(Element):
-    def __init__(self, i: int, j: int, V: Callable[[float], float]):
-        super().__init__(i, j)
-        self.V = V
-
-    def build(self, state: StateBuilder):
-        self.idx = state.add_variable()
-
-    def stamp_matrices(self, G: np.ndarray, C: np.ndarray):
-        if self.i != -1:
-            # Add current contributions
-            G[self.i, self.idx] -= 1 # 0 = ... - I_i + ...
-
-            # Constrain voltage difference
-            G[self.idx, self.i] -= 1 # V_e = ... - V_i + ...
-
-        if self.j != -1:
-            G[self.j, self.idx] += 1 # 0 = ... + I_j + ...
-
-            G[self.idx, self.j] += 1 # V_e = ... + V_j + ...
-
-    def stamp_source(self, t: float, source: np.ndarray):
-        source[self.idx] = self.V(t)
-
-class Resistor(Element):
-    def __init__(self, i: int, j: int, R: float):
-        super().__init__(i, j);
-        self.R = R
-
-    def stamp_matrices(self, G: np.ndarray, C: np.ndarray):
-        inv = 1 / self.R
-        if self.i != -1:
-            G[self.i, self.i] -= inv # I_i = ... - V_i / R + ...
-        if self.j != -1:
-            G[self.j, self.j] -= inv # I_j = ... - V_j / R + ...
-
-        if self.i != -1 and self.j != -1:
-            G[self.i, self.j] += inv # I_i = ... + V_j / R + ...
-            G[self.j, self.i] += inv # I_j = ... + V_i / R + ...
-
-
-class Capacitor(Element):
-    def __init__(self, i: int, j: int, C: float):
-        super().__init__(i, j)
-        self.C = C
-
-    def stamp_matrices(self, G: np.ndarray, C: np.ndarray):
-        if self.i != -1:
-            C[self.i, self.i] -= self.C # I_i = ... - C * dV_i/dt + ...
-        if self.j != -1:
-            C[self.j, self.j] -= self.C # I_j = ... - C * dV_j/dt + ...
-
-        if self.i != -1 and self.j != -1:
-            C[self.i, self.j] += self.C # I_i = ... + C * dV_j/dt + ...
-            C[self.j, self.i] += self.C # I_j = ... + C * dV_i/dt + ...
-
-
-class Inductor(Element):
-    def __init__(self, i: int, j: int, L: float):
-        super().__init__(i, j)
-        self.L = L
-
-    def build(self, state: StateBuilder):
-        self.idx = state.add_variable()
-
-    def stamp_matrices(self, G: np.ndarray, C: np.ndarray):
-        if self.i != -1:
-            G[self.i, self.idx] = -1 # 0 = ... - I_L + ...
-            G[self.idx, self.i] = 1 # L dI_L/dt = ... + V_i + ...
-        if self.j != -1:
-            G[self.j, self.idx] = 1 # 0 = ... + I_L + ...
-            G[self.idx, self.j] = -1 # L dI_L/dt = ... - V_j + ...
-
-        C[self.idx, self.idx] = - self.L
+from src.StateBuilder import StateBuilder
+from src.Element import Element
+from src.Common import Capacitor, VoltageSource, Resistor, Inductor
+from src.Diode import Diode
 
 def trapezoidal_step(dt: float, x: np.ndarray, G: np.ndarray, C: np.ndarray, b: np.ndarray):
     # Trapezoidal Rule
@@ -126,58 +28,74 @@ def gear2_step(dt: float, x_0: np.ndarray, x_1: np.ndarray, G: np.ndarray, C: np
 
     return np.linalg.solve(dividend, divisor)
 
-state = StateBuilder(4)
+builder = StateBuilder(2)
+
+I_s = 0.01
+k = 10
 
 elements: List[Element] = [
-    VoltageSource(-1, 0, lambda t: 1),
-    Resistor(0, 1, 1),
-    Inductor(1, -1, 1),
-    VoltageSource(-1, 2, lambda t: 2),
-    Resistor(2, 3, 1),
-    Inductor(3, -1, 1),
+    VoltageSource(-1, 0, lambda t: math.sin(2 * math.pi * t)),
+    Diode(0, 1, I_s, k),
+    Capacitor(1, -1, 3),
+    Resistor(1, -1, 1)
 ]
 
 for element in elements:
-    element.build(state)
+    element.build(builder)
 
-G = np.zeros((state.size(), state.size()))
-C = np.zeros((state.size(), state.size()))
+equation = builder.equation()
 
 for element in elements:
-    element.stamp_matrices(G, C)
-
-print(G)
-print(C)
+    element.const_stamp(equation)
 
 dt = 0.01
 
+equation_copy = equation.copy()
 
-x_prev = np.zeros(state.size())
+x_prev = builder.state()
 
-b = np.zeros(state.size())
 for element in elements:
-    element.stamp_source(0, b)
+    element.stamp(0, equation_copy, x_prev)
 
-x = trapezoidal_step(dt, x_prev, G, C, b)
+x = trapezoidal_step(dt, x_prev, equation_copy.G, equation_copy.C, equation_copy.b)
 
 import matplotlib.pyplot as plt
 
 history = []
 
-for index in range(100):
+for index in range(500):
     print(x)
     t = dt * index
 
-    for element in elements:
-        element.stamp_source(t, b)
+    x_next = x.copy()
 
-    x_next = gear2_step(dt, x_prev, x, G, C, b)
+    i = 0
+    while True:
+        equation_copy = equation.copy()
+
+        for element in elements:
+            element.stamp(t, equation_copy, x_next)
+
+        x_next_iter = gear2_step(dt, x_prev, x, equation_copy.G, equation_copy.C, equation_copy.b)
+
+        if np.linalg.norm(x_next_iter - x_next) < 1e-6:
+            break
+
+        x_next = 0.5 * x_next_iter + 0.5 * x_next
+
+        i += 1
+
+        if i > 40:
+            print("\033[33mFailed to converge after 40 iterations\033[97m")
+            break
 
     x_prev = x
     x = x_next
 
     history.append(x)
 
+import matplotlib.pyplot as plt
+
 plt.plot(history)
-plt.legend(['V0 Voltage', 'V1 Voltage', 'V2 Voltage', 'V3 Voltage', 'V0 current', 'V2 current', 'V1 current', 'V3 current'])
+plt.legend([str(k) for k in range(len(history))])
 plt.show()
