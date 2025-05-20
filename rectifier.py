@@ -7,17 +7,17 @@ from src.Common import Capacitor, VoltageSource, Resistor, Inductor
 from src.Diode import Diode
 from src.Simulation import Simulation
 
-I_s = 0.01
-k = 20
+I_s = 1e-9
+k = 50
 
 elements: List[Element] = [
-    VoltageSource(-1, 0, lambda t: math.sin(2000 * math.pi * t)),
+    VoltageSource(-1, 0, lambda t: math.sin(2 * math.pi * 60 * t)),
     Diode(1, 0, I_s, k),
     Diode(0, 2, I_s, k),
     Diode(1, -1, I_s, k),
     Diode(-1, 2, I_s, k),
     Resistor(1, 2, 100000),
-    Capacitor(1, 2, 0.01)
+    Capacitor(1, 2, 0.001)
 ]
 
 simulation = Simulation(3, elements,
@@ -27,7 +27,7 @@ simulation = Simulation(3, elements,
 
 history = []
 
-sim_time = 0.01
+sim_time = 0.4
 
 steps = int(sim_time / simulation.dt)
 
