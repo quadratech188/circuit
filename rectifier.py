@@ -2,10 +2,10 @@ import math
 import numpy as np
 from typing import List
 
-from src.Element import Element
-from src.Common import Capacitor, VoltageSource, Resistor, Inductor
-from src.Diode import Diode
-from src.Simulation import Simulation
+from mna.Element import Element
+from mna.Common import Capacitor, VoltageSource, Resistor, Inductor
+from mna.Diode import Diode
+from mna.Simulation import Simulation
 
 I_s = 1e-9
 k = 50
