@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from typing import List
+import time
 
 from mna.Element import Element
 from mna.Common import Capacitor, VoltageSource, Resistor, Inductor
@@ -21,23 +22,30 @@ elements: List[Element] = [
 ]
 
 simulation = Simulation(3, elements,
-                        dt=0.0001,
+                        dt=0.0005,
                         solver_iterations=20,
                         solver_threshold=1e-6)
 
 history = []
 
-sim_time = 0.4
+sim_time = 0.1
 
 steps = int(sim_time / simulation.dt)
 
 history = np.zeros((steps, simulation.x.size))
+
+before = time.time()
 
 for index in range(steps):
     simulation.step(simulation.dt * index)
 
     history[index] = simulation.x
 
+after = time.time()
+
+print(f'Simulation speed: {sim_time / (after - before)}x realtime')
+
+"""
 import matplotlib.pyplot as plt
 
 plt.plot(history[:, 0])
@@ -45,3 +53,4 @@ plt.plot(history[:, 2] - history[:, 1])
 plt.legend(['Input', 'Output'])
 
 plt.show()
+"""

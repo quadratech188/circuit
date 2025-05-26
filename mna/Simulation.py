@@ -51,7 +51,7 @@ class Simulation:
                 x_next = x_next_iter.copy()
                 break
 
-            x_next = x_next_iter
+            x_next = x_next_iter.copy()
         else:
             print(f"\033[33mt = {t}: Failed to converge after {self.solver_iterations} iterations\033[97m")
 

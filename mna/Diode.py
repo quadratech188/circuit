@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 from mna.Element import Element
@@ -17,9 +18,11 @@ class Diode(Element):
 
         v_delta = v_i - v_j
 
-        I = self.I_s * (np.exp(self.k * v_delta) - 1)
+        exp_term = math.exp(self.k * v_delta);
 
-        dI_dV = self.k * self.I_s * np.exp(self.k * v_delta)
+        I = self.I_s * (exp_term - 1)
+
+        dI_dV = self.k * self.I_s * exp_term
         I_eff = I - dI_dV * v_delta
 
         # Resistor + CurrentSource
