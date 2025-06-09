@@ -1,6 +1,6 @@
 import numpy as np
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import mna
 import mna_visual
 
@@ -13,7 +13,7 @@ class State:
     def add_element(self, element: mna_visual.Element):
         self.elements.append(element)
 
-    def compile(self) -> mna.Simulation:
+    def compile(self) -> Tuple[mna.Simulation, dict]:
         self.uf = mna_visual.UnionFind(self.n)
         for element in self.elements:
             element.hook(self)
@@ -31,4 +31,4 @@ class State:
                 self.uf.size,
                 result,
                 state
-                )
+                ), self.uf._canonical_mapping

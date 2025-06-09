@@ -3,10 +3,7 @@ import numpy as np
 from typing import List
 import time
 
-from mna.Element import Element
-from mna.Common import Capacitor, VoltageSource, Resistor, Inductor
-from mna.Diode import Diode
-from mna.Simulation import Simulation
+from mna import Element, Capacitor, VoltageSource, Resistor, Inductor, Diode, Simulation
 
 I_s = 1e-9
 k = 50
@@ -22,9 +19,9 @@ elements: List[Element] = [
 ]
 
 simulation = Simulation(3, elements,
-                        dt=0.0005,
+                        dt=0.0001,
                         solver_iterations=20,
-                        solver_threshold=1e-6)
+                        solver_threshold=1e-10)
 
 history = []
 
@@ -45,12 +42,10 @@ after = time.time()
 
 print(f'Simulation speed: {sim_time / (after - before)}x realtime')
 
-"""
 import matplotlib.pyplot as plt
 
-plt.plot(history[:, 0])
+plt.plot(history)
 plt.plot(history[:, 2] - history[:, 1])
-plt.legend(['Input', 'Output'])
+plt.legend(list(range(simulation.x.size)))
 
 plt.show()
-"""
