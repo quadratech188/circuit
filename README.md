@@ -2,7 +2,7 @@
 ```
 git clone https://github.com/quadratech188/circuit
 cd circuit
-python rectifier_visual.py
+python rectifier_vpython.py
 ```
 
 에러나면 git이랑 python 되는지 확인하세요
